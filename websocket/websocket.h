@@ -1,4 +1,4 @@
-#ifndef WEBSOCKET_H
+﻿#ifndef WEBSOCKET_H
 #define WEBSOCKET_H
 
 #ifdef __linux__
@@ -48,6 +48,9 @@ typedef void (*messageCallback)(int, string);
 #define WS_TIMEOUT_RECV 10
 #define WS_TIMEOUT_PONG 5
 
+#define IMG_WIDTH 640
+#define IMG_HEIGHT 480
+
 class wsClient{
 public:
     wsClient(int _socket, in_addr _addr){
@@ -96,6 +99,7 @@ public:
     void stopServer();
     bool wsSend(int clientID, string message, bool binary = false);
     void wsClose(int clientID);
+    int transmit(const cv::Mat& image, int clientID);
     vector<int> getClientIDs();
     string getClientIP(int clientID);
 private:

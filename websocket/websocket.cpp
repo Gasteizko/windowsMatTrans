@@ -1,4 +1,4 @@
-#ifdef __linux__
+﻿#ifdef __linux__
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -700,7 +700,10 @@ void webSocket::startServer(int port){
 
     struct timeval timeout;
     time_t nextPingTime = time(NULL) + 1;
-    int x = 0;
+
+    cv::VideoCapture capture(0);
+    cv::Mat image;
+
     while (FD_ISSET(listenfd, &fds)){
         read_fds = fds;
         timeout.tv_sec = 0;
@@ -752,18 +755,43 @@ void webSocket::startServer(int port){
         //if (callPeriodic != NULL)
         //    callPeriodic();
 
-
+        capture >> image;
         for (int i = 0; i < wsClients.size(); ++i)
         {
             if (wsClients[i] != NULL && wsClients[i]->ReadyState == WS_READY_STATE_OPEN)
             {
-                x++;
-                char send_info[100];
-                sprintf_s(send_info, "hello %d", x);
-                wsSend(i, send_info);
+                transmit(image, i);
+                //char send_info[100];
+                //sprintf_s(send_info, "hello %d", x);
+                //wsSend(i, send_info);
             }                
         }
 
+    }
+}
+
+int webSocket::transmit(const cv::Mat& image, int clientID)
+{
+    if (image.empty())
+    {
+        printf("empty image\n\n");
+        return -1;
+    }
+
+    if (image.cols != IMG_WIDTH || image.rows != IMG_HEIGHT || image.type() != CV_8UC3)
+    {
+        printf("the image must satisfy : cols == IMG_WIDTH��%d��  rows == IMG_HEIGHT��%d�� type == CV_8UC3\n\n", IMG_WIDTH, IMG_HEIGHT);
+        return -1;
+    }
+    std::vector < uchar > uchar_encoded;
+    std::string base64encoded;
+    cv::imencode(".jpg", image, uchar_encoded);
+    std::string str(uchar_encoded.begin(), uchar_encoded.end());
+    base64encoded = base64_encode((const unsigned char*)str.c_str(), str.size());
+    if (wsSend(clientID, base64encoded))
+    {
+        printf("send msg error: %s(errno: %d)\n", strerror(errno), errno);
+        return -1;
     }
 }
 
