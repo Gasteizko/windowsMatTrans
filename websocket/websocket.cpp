@@ -155,7 +155,7 @@ bool webSocket::wsSendClientMessage(int clientID, unsigned char opcode, string m
     int messageLength = message.size();
 
     // set max payload length per frame
-    int bufferSize = 4096;
+    int bufferSize = 4096*4;
 
     // work out amount of frames to send, based on $bufferSize
     int frameCount = ceil((float)messageLength / bufferSize);
@@ -701,7 +701,7 @@ void webSocket::startServer(int port){
     struct timeval timeout;
     time_t nextPingTime = time(NULL) + 1;
 
-    cv::VideoCapture capture(0);
+    cv::VideoCapture capture("D:\\DATA\\GOPR0089.MP4");
     cv::Mat image;
 	
     while (FD_ISSET(listenfd, &fds)){
@@ -748,23 +748,27 @@ void webSocket::startServer(int port){
             }
         }
 
-        //if (time(NULL) >= nextPingTime){
-        //    wsCheckIdleClients();
-        //    nextPingTime = time(NULL) + 1;
-        //}
-        //if (callPeriodic != NULL)
-        //    callPeriodic();
+		if (time(NULL) >= nextPingTime){
+			wsCheckIdleClients();
+			nextPingTime = time(NULL) + 1;
+		}
+		//if (callPeriodic != NULL)
+		//	callPeriodic();
 
         capture >> image;
+		cv::resize(image, image, cv::Size(IMG_WIDTH, IMG_HEIGHT));
         for (int i = 0; i < wsClients.size(); ++i)
         {
             if (wsClients[i] != NULL && wsClients[i]->ReadyState == WS_READY_STATE_OPEN)
             {
-				if (transmit(image, i))
-				//if (wsSend(i, "hello, world"))
-					std::cout << "success" << std::endl;
-				else
-					std::cout << "fail" << std::endl;
+				transmit(image, i);
+				cv::imshow("image", image);
+				cv::waitKey(30);
+				//if (transmit(image, i))
+				////if (wsSend(i, "hello, world"))
+				//	std::cout << "success" << std::endl;
+				//else
+				//	std::cout << "fail" << std::endl;
             }                
         }
 
@@ -786,7 +790,9 @@ int webSocket::transmit(const cv::Mat& image, int clientID)
     }
     std::vector < uchar > uchar_encoded;
     std::string base64encoded;
-    cv::imencode(".jpg", image, uchar_encoded);
+	vector<int> qa;
+	qa.push_back(5);
+	cv::imencode(".JPEG", image, uchar_encoded, qa);
     std::string str(uchar_encoded.begin(), uchar_encoded.end());
     base64encoded = base64_encode((const unsigned char*)str.c_str(), str.size());
     if (!wsSend(clientID, base64encoded))
