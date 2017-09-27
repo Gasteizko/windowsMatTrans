@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>django-websocket</title>
+    <script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript">//<![CDATA[
+    $(function () {
+        var socket;
+        $('#send_message').click(function () {
+            socket = new WebSocket("ws://192.168.50.127:8001");
+{#            var socket = new WebSocket("ws://" + window.location.host + "/echo_once/");#}
+            socket.onerror=function(e){
+                console.log(e);
+            };
+            socket.onopen = function () {
+                console.log('WebSocket open');//成功连接上Websocket
+                socket.send($('#message').val());//发送数据到服务端
+            };
+            socket.onmessage = function (e) {
+                console.log('message: ' + e.data);//打印服务端返回的数据
+                $('#show').attr('src','data:image/png;base64,' + e.data );
+            };
+        });
+
+        $('#close').click(function () {
+            socket.close();
+        });
+
+    });
+    //]]></script>
+</head>
+<img>
+<input type="text" id="message" value="Hello, World!"/>
+<button type="button" id="send_message">发送 message</button>
+<button type="button" id="close">关闭连接</button>
+<h1>Received Messages</h1>
+
+<img id="show" src="http://www.w3school.com.cn/i/eg_tulip.jpg">
+
+{#<div id="img_trans" style="width: 200px;height:200px;background: #FFF8DC;">#}
+{##}
+{#</div>#}
+<div id="messagecontainer" >
+
+</div>
+
+</body>
+</html>
