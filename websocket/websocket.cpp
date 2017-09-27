@@ -167,6 +167,7 @@ bool webSocket::wsSendClientMessage(int clientID, unsigned char opcode, string m
     int lastFrameBufferLength = (messageLength % bufferSize) != 0 ? (messageLength % bufferSize) : (messageLength != 0 ? bufferSize : 0);
 
     // loop around all frames to send
+	int pos = 0;
     for (int i = 0; i < frameCount; i++) {
         // fetch fin, opcode and buffer length for frame
         unsigned char fin = i != maxFrame ? 0 : WS_FIN;
@@ -175,7 +176,6 @@ bool webSocket::wsSendClientMessage(int clientID, unsigned char opcode, string m
         size_t bufferLength = i != maxFrame ? bufferSize : lastFrameBufferLength;
         char *buf;
         size_t totalLength;
-
         // set payload length variables for frame
         if (bufferLength <= 125) {
             // int payloadLength = bufferLength;
@@ -183,7 +183,7 @@ bool webSocket::wsSendClientMessage(int clientID, unsigned char opcode, string m
             buf = new char[totalLength];
             buf[0] = fin | opcode;
             buf[1] = bufferLength;
-            memcpy(buf+2, message.c_str(), message.size());
+			memcpy(buf + 2, message.c_str() + pos, bufferLength);
         }
         else if (bufferLength <= 65535) {
             // int payloadLength = WS_PAYLOAD_LENGTH_16;
@@ -193,7 +193,7 @@ bool webSocket::wsSendClientMessage(int clientID, unsigned char opcode, string m
             buf[1] = WS_PAYLOAD_LENGTH_16;
             buf[2] = bufferLength >> 8;
             buf[3] = bufferLength;
-            memcpy(buf+4, message.c_str(), message.size());
+			memcpy(buf + 4, message.c_str() + pos, bufferLength);
         }
         else {
             // int payloadLength = WS_PAYLOAD_LENGTH_63;
@@ -209,9 +209,9 @@ bool webSocket::wsSendClientMessage(int clientID, unsigned char opcode, string m
             buf[7] = bufferLength >> 16;
             buf[8] = bufferLength >> 8;
             buf[9] = bufferLength;
-            memcpy(buf+10, message.c_str(), message.size());
+			memcpy(buf + 10, message.c_str() + pos, bufferLength);
         }
-
+		pos += bufferLength;
         // send frame
         int left = totalLength;
         char *buf2 = buf;
@@ -703,7 +703,7 @@ void webSocket::startServer(int port){
 
     cv::VideoCapture capture(0);
     cv::Mat image;
-
+	
     while (FD_ISSET(listenfd, &fds)){
         read_fds = fds;
         timeout.tv_sec = 0;
@@ -760,10 +760,11 @@ void webSocket::startServer(int port){
         {
             if (wsClients[i] != NULL && wsClients[i]->ReadyState == WS_READY_STATE_OPEN)
             {
-                transmit(image, i);
-                //char send_info[100];
-                //sprintf_s(send_info, "hello %d", x);
-                //wsSend(i, send_info);
+				if (transmit(image, i))
+				//if (wsSend(i, "hello, world"))
+					std::cout << "success" << std::endl;
+				else
+					std::cout << "fail" << std::endl;
             }                
         }
 
@@ -780,7 +781,7 @@ int webSocket::transmit(const cv::Mat& image, int clientID)
 
     if (image.cols != IMG_WIDTH || image.rows != IMG_HEIGHT || image.type() != CV_8UC3)
     {
-        printf("the image must satisfy : cols == IMG_WIDTH��%d��  rows == IMG_HEIGHT��%d�� type == CV_8UC3\n\n", IMG_WIDTH, IMG_HEIGHT);
+        printf("the image must satisfy: cols == IMG_WIDTH %d, rows == IMG_HEIGHT %d, type == CV_8UC3\n\n", IMG_WIDTH, IMG_HEIGHT);
         return -1;
     }
     std::vector < uchar > uchar_encoded;
@@ -788,11 +789,12 @@ int webSocket::transmit(const cv::Mat& image, int clientID)
     cv::imencode(".jpg", image, uchar_encoded);
     std::string str(uchar_encoded.begin(), uchar_encoded.end());
     base64encoded = base64_encode((const unsigned char*)str.c_str(), str.size());
-    if (wsSend(clientID, base64encoded))
+    if (!wsSend(clientID, base64encoded))
     {
         printf("send msg error: %s(errno: %d)\n", strerror(errno), errno);
         return -1;
     }
+	return 1;
 }
 
 void webSocket::stopServer(){

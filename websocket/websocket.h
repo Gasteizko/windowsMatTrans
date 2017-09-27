@@ -13,6 +13,10 @@
 #include <map>
 #include <time.h>
 
+#include <opencv/highgui.h>
+#include <opencv/cv.h>
+#include <opencv/cxcore.h>
+
 using namespace std;
 
 typedef void (*nullCallback)();
