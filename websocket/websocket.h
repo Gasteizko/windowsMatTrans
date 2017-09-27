@@ -52,8 +52,8 @@ typedef void (*messageCallback)(int, string);
 #define WS_TIMEOUT_RECV 10
 #define WS_TIMEOUT_PONG 5
 
-#define IMG_WIDTH 480
-#define IMG_HEIGHT 320
+#define IMG_WIDTH 640
+#define IMG_HEIGHT 480
 
 class wsClient{
 public:

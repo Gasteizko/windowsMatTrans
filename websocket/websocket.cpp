@@ -153,7 +153,7 @@ bool webSocket::wsSendClientMessage(int clientID, unsigned char opcode, string m
 
     // fetch message length
     int messageLength = message.size();
-
+    printf("message length %d\n", message.size());
     // set max payload length per frame
     int bufferSize = 4096*4;
 
@@ -701,7 +701,7 @@ void webSocket::startServer(int port){
     struct timeval timeout;
     time_t nextPingTime = time(NULL) + 1;
 
-    cv::VideoCapture capture("D:\\DATA\\GOPR0089.MP4");
+    cv::VideoCapture capture("D:\\DOWNLOAD\\Game.of.Thrones.S07E07.The.Dragon.and.the.Wolf.720p.AMZN.WEB-DL.DDP5.1.H.264-GoT.mkv");
     cv::Mat image;
 	
     while (FD_ISSET(listenfd, &fds)){
@@ -748,27 +748,30 @@ void webSocket::startServer(int port){
             }
         }
 
-		if (time(NULL) >= nextPingTime){
-			wsCheckIdleClients();
-			nextPingTime = time(NULL) + 1;
-		}
+		//if (time(NULL) >= nextPingTime){
+		//	wsCheckIdleClients();
+		//	nextPingTime = time(NULL) + 1;
+		//}
 		//if (callPeriodic != NULL)
 		//	callPeriodic();
 
         capture >> image;
+        if (!image.data)
+            continue;
 		cv::resize(image, image, cv::Size(IMG_WIDTH, IMG_HEIGHT));
         for (int i = 0; i < wsClients.size(); ++i)
         {
             if (wsClients[i] != NULL && wsClients[i]->ReadyState == WS_READY_STATE_OPEN)
             {
 				transmit(image, i);
-				cv::imshow("image", image);
-				cv::waitKey(30);
+				//cv::imshow("image", image);
+				//cv::waitKey(30);
 				//if (transmit(image, i))
 				////if (wsSend(i, "hello, world"))
 				//	std::cout << "success" << std::endl;
 				//else
 				//	std::cout << "fail" << std::endl;
+                Sleep(10);
             }                
         }
 
@@ -791,7 +794,8 @@ int webSocket::transmit(const cv::Mat& image, int clientID)
     std::vector < uchar > uchar_encoded;
     std::string base64encoded;
 	vector<int> qa;
-	qa.push_back(5);
+    qa.push_back(CV_IMWRITE_JPEG_QUALITY);
+	qa.push_back(65);
 	cv::imencode(".JPEG", image, uchar_encoded, qa);
     std::string str(uchar_encoded.begin(), uchar_encoded.end());
     base64encoded = base64_encode((const unsigned char*)str.c_str(), str.size());
