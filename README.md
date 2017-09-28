@@ -4,7 +4,7 @@ Transmit cv::Mat via winsock to front-end and display the image using websocket.
 
 ## Server Code ##
 
-The server code is implemented in `websocket_server_c`, which is written in C++ and based on winsock2 on Windows. The server code first construct handshakes and a connection with the client based on TCP protocal. As long as the connection being set up, a video is transmitted to the front-end frame by frame. The frames are extracted using OpenCV. And the frames are encoded in JPEG format.
+The server code is implemented in `websocket_server_c`, which is written in C++ and based on winsock2 on Windows. The server code first construct handshakes and a connection with the client based on TCP protocal. As long as the connection being set up, a video is transmitted to the front-end frame by frame. The frames are extracted using OpenCV. And the frames are encoded in JPEG format first and then encoded to string using base64.
 
 Note that, many examples of socket sending messages ignored the steps of construct connectiong for websocket, which is implemented in this repo.
 
